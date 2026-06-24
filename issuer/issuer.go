@@ -346,14 +346,21 @@ func (i *Issuer) handleCredential(w http.ResponseWriter, r *http.Request) {
 	newNonce, _ := generateToken(16)
 	i.tokens.RotateCNonce(r.Context(), tokenRecord.Token, newNonce, time.Now().Add(i.cfg.cNonceTTL)) //nolint:errcheck
 
-	resp := types.CredentialResponse{
-		Credential:      credential,
-		CNonce:          newNonce,
-		CNonceExpiresIn: int(i.cfg.cNonceTTL.Seconds()),
-	}
 	_ = format // format is implicit from configuration; could be added to response header
 
-	writeJSON(w, http.StatusOK, resp)
+	if req.Proofs != nil {
+		writeJSON(w, http.StatusOK, types.CredentialResponse{
+			Credentials:     []types.CredentialResponseItem{{Credential: credential}},
+			CNonce:          newNonce,
+			CNonceExpiresIn: int(i.cfg.cNonceTTL.Seconds()),
+		})
+	} else {
+		writeJSON(w, http.StatusOK, types.CredentialResponse{
+			Credential:      credential,
+			CNonce:          newNonce,
+			CNonceExpiresIn: int(i.cfg.cNonceTTL.Seconds()),
+		})
+	}
 }
 
 // --- validation helpers ---
