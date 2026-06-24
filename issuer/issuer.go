@@ -284,8 +284,8 @@ func (i *Issuer) handleToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *Issuer) handleCredential(w http.ResponseWriter, r *http.Request) {
-	// Extract and validate the Bearer token.
-	tokenRecord, err := i.validateBearer(r)
+	// Extract and validate the access token (Bearer or DPoP scheme).
+	tokenRecord, err := i.extractToken(r)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, oid4vci.ErrCodeInvalidToken, err.Error())
 		return
@@ -306,9 +306,16 @@ func (i *Issuer) handleCredential(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate proof of possession.
+	// Normalise: if only the batch "proofs" field is present, promote the
+	// first JWT to a singular proof so existing validation logic handles both.
+	proof := req.Proof
+	if proof == nil && req.Proofs != nil && len(req.Proofs.JWT) > 0 {
+		proof = &types.CredentialProof{ProofType: "jwt", JWT: req.Proofs.JWT[0]}
+	}
+
 	var holderKey any
-	if req.Proof != nil {
-		holderKey, err = i.validateProof(r.Context(), req.Proof, tokenRecord)
+	if proof != nil {
+		holderKey, err = i.validateProof(r.Context(), proof, tokenRecord)
 		if err != nil {
 			cNonce, _ := generateToken(16)
 			writeJSON(w, http.StatusBadRequest, types.ErrorResponse{
@@ -351,14 +358,19 @@ func (i *Issuer) handleCredential(w http.ResponseWriter, r *http.Request) {
 
 // --- validation helpers ---
 
-func (i *Issuer) validateBearer(r *http.Request) (*AccessTokenRecord, error) {
+func (i *Issuer) extractToken(r *http.Request) (*AccessTokenRecord, error) {
 	auth := r.Header.Get("Authorization")
-	if !strings.HasPrefix(auth, "Bearer ") {
+	var raw string
+	switch {
+	case strings.HasPrefix(auth, "Bearer "):
+		raw = strings.TrimPrefix(auth, "Bearer ")
+	case strings.HasPrefix(auth, "DPoP "):
+		raw = strings.TrimPrefix(auth, "DPoP ")
+	default:
 		return nil, oid4vci.ErrInvalidAccessToken
 	}
-	token := strings.TrimPrefix(auth, "Bearer ")
 
-	record, err := i.tokens.Get(r.Context(), token)
+	record, err := i.tokens.Get(r.Context(), raw)
 	if err != nil {
 		return nil, oid4vci.ErrInvalidAccessToken
 	}

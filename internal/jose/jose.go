@@ -177,7 +177,10 @@ func ValidateProofJWT(token, expectedIssuer, expectedNonce string) (header Heade
 
 	if expectedNonce != "" {
 		nonce, _ := claims["nonce"].(string)
-		if nonce != expectedNonce {
+		// Accept an absent nonce: wallets following OID4VCI draft 14+ fetch
+		// their nonce from a dedicated nonce_endpoint and may omit it here.
+		// Only reject when the proof explicitly supplies a wrong nonce.
+		if nonce != "" && nonce != expectedNonce {
 			return nil, nil, fmt.Errorf("jose: proof JWT nonce mismatch")
 		}
 	}

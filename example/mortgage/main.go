@@ -74,7 +74,7 @@ func main() {
 	srv2 := httptest.NewServer(bankIssuer.Handler())
 	defer srv2.Close()
 
-	fmt.Println("=== Bank issuer running at", srv2.URL, "===\n")
+	fmt.Println("=== Bank issuer running at", srv2.URL, "===")
 
 	// --- 2. Bank creates an offer for customer Jane Smith ---
 

@@ -1,6 +1,6 @@
 # go-oid4vci
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/alanh-pyxical/attestio/go-oid4vci.svg)](https://pkg.go.dev/github.com/alanh-pyxical/attestio/go-oid4vci)
+[![Go Reference](https://pkg.go.dev/badge/github.com/alanh-pyxical/go-oid4vci.svg)](https://pkg.go.dev/github.com/alanh-pyxical/go-oid4vci)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An idiomatic Go implementation of [OpenID for Verifiable Credential Issuance (OID4VCI)](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html), focusing on the pre-authorised code flow.
